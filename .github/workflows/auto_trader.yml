@@ -1,0 +1,27 @@
+name: Invading Paper Trader
+on:
+  schedule:
+    # Runs every 10 mins during Indian market hours (UTC)
+    # IST 9:15-15:30 ≈ UTC 3:45-10:00
+    - cron: '*/10 4-9 * * 1-5'
+  workflow_dispatch: # Manual run button
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.10' }
+      - name: Install deps
+        run: pip install yfinance pandas ta pytz
+      - name: Run Strategy Engine
+        run: python trader.py
+      - name: Commit State & Trades
+        run: |
+          git config user.name "trader-bot"
+          git config user.email "bot@local"
+          git add state.json trades.csv
+          git commit -m "Auto trade run $(date -u)" || echo "No changes"
+          git push
